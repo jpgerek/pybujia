@@ -1,0 +1,138 @@
+name: checks and tests
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # ubuntu
+
+          # pyspark 3.0.0
+          - pyspark-version: "3.0.0"
+            python-version: "3.9"
+            os: ubuntu-latest
+            java-version: "11"
+          - pyspark-version: "3.0.0"
+            python-version: "3.9"
+            os: ubuntu-latest
+            java-version: "8"
+
+          # pyspark 3.1.1
+          - pyspark-version: "3.1.1"
+            python-version: "3.10"
+            os: ubuntu-latest
+            java-version: "11"
+          - pyspark-version: "3.1.1"
+            python-version: "3.9"
+            os: ubuntu-latest
+            java-version: "8"
+
+          # pyspark 3.2.0
+          - pyspark-version: "3.2.0"
+            python-version: "3.10"
+            os: ubuntu-latest
+            java-version: "11"
+          - pyspark-version: "3.2.0"
+            python-version: "3.9"
+            os: ubuntu-latest
+            java-version: "8"
+
+          # pyspark 3.3.0
+          - pyspark-version: "3.3.0"
+            python-version: "3.10"
+            os: ubuntu-latest
+            java-version: "11"
+          - pyspark-version: "3.3.0"
+            python-version: "3.9"
+            os: ubuntu-latest
+            java-version: "8"
+
+          # pyspark 3.4.0
+          - pyspark-version: "3.4.0"
+            python-version: "3.12"
+            os: ubuntu-latest
+            java-version: "17"
+          - pyspark-version: "3.4.0"
+            python-version: "3.11"
+            os: ubuntu-latest
+            java-version: "11"
+
+            # pyspark 3.5.0
+          - pyspark-version: "3.5.0"
+            python-version: "3.13"
+            os: ubuntu-latest
+            java-version: "17"
+          - pyspark-version: "3.5.0"
+            python-version: "3.12"
+            os: ubuntu-latest
+            java-version: "11"
+
+          # macos
+
+          # pyspark 3.3.0
+          - pyspark-version: "3.3.0"
+            python-version: "3.10"
+            os: macos-latest
+            java-version: "17"
+          - pyspark-version: "3.3.0"
+            python-version: "3.9"
+            os: macos-latest
+            java-version: "11"
+
+    name: ${{ matrix.os }} Spark${{ matrix.pyspark-version }} Py${{ matrix.python-version }} JDK${{ matrix.java-version }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: "temurin"
+          java-version: ${{ matrix.java-version }}
+
+      - name: Validate JSON files
+        run: git ls-files | grep '\.json$' | xargs jq empty
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyspark==${{ matrix.pyspark-version }}
+          pip install .[dev]
+
+      - name: Black formatting
+        run: black --check .
+
+      - name: ruff linting
+        run: ruff check .
+
+      - name: mypy type checking
+        run: mypy .
+
+      - name: Run tests with coverage summary
+        shell: bash
+        run: |
+          export PYTHONPATH=.
+          pytest . -v \
+            --doctest-modules \
+            --cov=pybujia \
+            --cov-fail-under=85 \
+            --cov-report=term \
+            --cov-report=term-missing

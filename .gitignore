@@ -1,0 +1,6 @@
+__pycache__/
+dist/
+pybujia.egg-info/
+.coverage*
+.tox/
+build/

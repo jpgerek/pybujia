@@ -1,0 +1,7 @@
+extends: default
+
+rules:
+  document-start: disable      # disables the '---' warning
+  line-length:
+    max: 120                   # increases the max line length
+    level: warning             # optionally downgrade to warning

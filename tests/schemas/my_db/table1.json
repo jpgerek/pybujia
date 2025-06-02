@@ -1,0 +1,17 @@
+{
+  "fields": [
+    {
+      "name": "id",
+      "type": "integer"
+    },
+    {
+      "name": "name",
+      "type": "string"
+    },
+    {
+      "name": "creation",
+      "type": "date"
+    }
+  ],
+  "type": "struct"
+}

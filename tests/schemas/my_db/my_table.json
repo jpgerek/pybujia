@@ -1,0 +1,29 @@
+{
+  "fields": [
+    {
+      "name": "id",
+      "type": "integer"
+    },
+    {
+      "name": "name",
+      "type": "string"
+    },
+    {
+      "name": "creation",
+      "type": "date"
+    },
+    {
+      "name": "category",
+      "type": "string"
+    },
+    {
+      "name": "enabled",
+      "type": "string"
+    },
+    {
+      "name": "today",
+      "type": "date"
+    }
+  ],
+  "type": "struct"
+}

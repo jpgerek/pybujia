@@ -1,0 +1,71 @@
+repos:
+  - repo: local
+    hooks:
+      - id: black
+        name: black
+        entry: black
+        language: system
+        types: [python]
+
+  - repo: local
+    hooks:
+      - id: ruff
+        name: ruff
+        entry: ruff check
+        language: system
+        types: [python]
+
+  - repo: local
+    hooks:
+      - id: mypy
+        name: mypy
+        entry: mypy
+        language: system
+        types: [python]
+
+  - repo: local
+    hooks:
+      - id: pyright
+        name: pyright
+        entry: |
+          bash -c '
+          PY_VER=$(python3 -c "import sys; print(f\"{sys.version_info.major}.{sys.version_info.minor}\")")
+          if [ "$PY_VER" = "3.9" ]; then
+            echo "Skipping Pyright for Python 3.9"
+            exit 0
+          else
+            pyright
+          fi
+          '
+        language: system
+        types: [python]
+
+  - repo: https://github.com/rhysd/actionlint
+    rev: v1.7.7
+    hooks:
+      - id: actionlint
+        name: lint github actions files
+
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: check-json
+      - id: check-toml
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+        args: [--markdown-linebreak-ext=md]
+
+  - repo: https://github.com/adrienverge/yamllint
+    rev: v1.37.0
+    hooks:
+      - id: yamllint
+        files: \.ya?ml$
+
+  - repo: local
+    hooks:
+      - id: pytest
+        name: unit tests
+        entry: bash -c 'PYTHONPATH=. pytest -vvs .'
+        language: python
+        files: \.(tests\.md|py)$
+        pass_filenames: false
