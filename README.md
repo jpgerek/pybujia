@@ -4,14 +4,14 @@
 ![pypi version](https://img.shields.io/pypi/v/pybujia)
 ![python versions](https://img.shields.io/pypi/pyversions/pybujia)
 
-Enables human-readable formats like Markdown or Spark's .show() for unit test input/expected tables — easy to document and version, making test data changes simple to track and review.
+Enables human-readable formats like Markdown or Spark's .show() for unit test input/expected tables - easy to document and version, making test data changes simple to track and review.
 Includes helpers to make writing PySpark unit tests easier.
 
 ## Requirements
 
 - Python >= 3.9
 - PySpark >= 3.0.0
-- Java JDK => 8, 11 and some PySpark versions 17
+- Java JDK => 8, 11, 17 or 21
 - OS Linux or macOS
 
 ## Installation
@@ -141,6 +141,36 @@ class UserActionsJob:
 
         result_df.write.mode("overwrite").saveAsTable(f"{self.DB_NAME}.output")
 ```
+
+### Running the example
+
+- Clone PyBujia repository
+
+```bash
+git clone https://github.com/jpgerek/pybujia.git
+cd pybujia
+```
+
+- Install dependencies
+
+```bash
+# Optionally you could choose a specific pyspark version
+pip install pyspark==3.3.0
+# Or just install the latest one
+pip install pyspark
+
+pip install ".[dev]"
+```
+
+Note: You'll need to have Java JDK >=8 installed in your OS
+
+- Running the unit tests
+
+```bash
+PYTHONPATH=. python3 -m pytest -vvs . examples/user_retention/tests/test_user_actions.py
+```
+
+You can check the example full implementation [here](examples/user_retention/)
 
 ## Structure and Guidelines for Data Fixtures
 
