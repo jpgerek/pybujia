@@ -1,4 +1,4 @@
-# PyBujia
+# <img src="logo-vertical.png" height="70px"/> PyBujia
 
 ![tests passing](https://github.com/jpgerek/pybujia/actions/workflows/ci.yaml/badge.svg)
 ![pypi version](https://img.shields.io/pypi/v/pybujia)
