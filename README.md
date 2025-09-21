@@ -58,16 +58,21 @@ This is how easy writing unit tests is:
 
 ```python
 def test_user_actions_method_transformation(self) -> None:
+    # Your Spark job
     spark_job = UserActionsJob(self._spark)
+
+    # Getting the table fixtures defined in the file "solutions.test.md"
     fixtures = PyBujia(
-        os.path.join(self.CURRENT_DIR, "solution.tests.md"),
-        self._spark,
+        os.path.join(self.CURRENT_DIR, "solution.tests.md"),  # Fixtures file full path
+        self._spark,  # Spark session
     )
+
+    # This method is generic, it can test any transformation method
     spark_method_test(
-        spark_job._transformation,
-        fixtures,
-        input_args=["my_db.user_actions"],
-        expected_result="my_db.output__expected",
+        spark_job._transformation,  # Transformation method defined in your Spark job
+        fixtures,  # Tables defined in the file "solutions.tests.md"
+        input_args=["my_db.user_actions"],  # Input table name
+        expected_result="my_db.output__expected",  # Output/expected table name
     )
 ```
 
@@ -75,16 +80,19 @@ If you want to test the whole job, end to end, not just a method:
 
 ```python
 def test_user_actions_job_solution(self):
+    # Getting the table fixtures defined in the file "solutions.test.md"
     fixtures = PyBujia(
-        os.path.join(self.CURRENT_DIR, "solution.tests.md"),
-        self._spark,
+        os.path.join(self.CURRENT_DIR, "solution.tests.md"),  # Fixtures file full path
+        self._spark,  # Spark session
     )
+
+    # This method is generic, it can test any Spark job class
     spark_job_test(
-        self._spark,
-        UserActionsJob.INPUT_TABLES,
-        UserActionsJob.OUTPUT_TABLES,
-        lambda: UserActionsJob(self._spark).run(),
-        fixtures,
+        self._spark,  # Spark session
+        UserActionsJob.INPUT_TABLES,  # List of input tables
+        UserActionsJob.OUTPUT_TABLES, # List of output/expected tables
+        lambda: UserActionsJob(self._spark).run(),  # Callback that triggers the Spark job execution
+        fixtures,  # Tables defined in the file "solutions.tests.md"
     )
 ```
 
@@ -114,6 +122,7 @@ class UserActionsJob:
     def __init__(self, spark: SparkSession) -> None:
         self._spark = spark
 
+    # All the transformation logic
     def _transformation(self, user_actions_df: DataFrame) -> DataFrame:
         clean_df = (
             user_actions_df.withColumn("current_year_month", F.date_format("event_date", "yyyy-MM"))
@@ -135,6 +144,7 @@ class UserActionsJob:
             .agg(F.count(F.lit(1)).alias("monthly_active_users"))
         )
 
+    # Triggers the Spark job execution
     def run(self) -> None:
         user_actions_df = self._spark.table(f"{self.DB_NAME}.user_actions")
         result_df = self._transformation(user_actions_df)
@@ -188,6 +198,15 @@ The inline data types must be PySpark valid.
 
 This format plays a dual role - it doubles as test documentation and actual input for executing unit tests.
 
-## Note
+Some examples:
 
-This project was built independently as a general-purpose utility for PySpark unit testing.
+- [Different ways to define tables and its schemas](tests/pyspark_job.tests.md)
+- [Defining the schemas externally as JSON files](tests/pyspark_job_schemas_fetcher.tests.md)
+- [2 input tables and 1 output table](examples/advertiser_status/tests/solution.tests.md)
+- [1 input table and 1 output table](examples/user_retention/tests/solution.tests.md)
+
+## Notes
+
+"Bujía" in Spanish (pronounced boo-HEE-ah) means spark plug.
+
+This project was built independently as a flexible, general-purpose toolkit for PySpark unit testing.
