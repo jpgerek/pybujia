@@ -4,3 +4,16 @@ pybujia.egg-info/
 .coverage*
 .tox/
 build/
+
+# Cache directories
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+
+# Virtual environments
+venv/
+env/
+myenv/
+ENV/
+env.bak/
+venv.bak/
