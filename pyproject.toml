@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pybujia"
-version = "0.1.0-rc9"
+version = "0.1.0"
 description = "Enables human-readable formats like Markdown or Spark's .show() for unit test input/expected tables — easy to document and version, making test data changes simple to track and review"
 authors = [{ name = "Juan Pablo Guereca", email = "juanpablo@guereca.com" }]
 readme = "README.md"
@@ -49,3 +49,6 @@ ignore_missing_imports = true
 
 [tool.black]
 line-length = 120
+
+[tool.setuptools]
+packages = ["pybujia"]
