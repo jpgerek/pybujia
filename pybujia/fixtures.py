@@ -20,6 +20,57 @@ from pyspark.sql.types import (
 )
 
 
+# Pre-compiled regex patterns for performance optimization
+_MARKDOWN_LINK_PATTERN = re.compile(
+    r"""
+    \[              # literal opening square bracket
+    ([^\]]*)        # capture group: zero or more characters that are NOT a closing square bracket
+    \]              # literal closing square bracket
+    \(              # literal opening parenthesis
+    [^\)]+          # one or more characters that are NOT a closing parenthesis
+    \)              # literal closing parenthesis
+    """,
+    re.VERBOSE,
+)
+
+_PIPE_DELIMITER_PATTERN = re.compile(
+    r"""
+    \s*         # optional whitespace
+    (?<!\\)     # not preceded by a backslash
+    \|          # pipe character
+    \s*         # optional whitespace
+     """,
+    re.VERBOSE,
+)
+
+_MARKDOWN_TABLE_DIVIDER_PATTERN = re.compile(
+    r"""
+    ^           # Start of line
+    \s*         # Optional leading whitespace
+    :?          # Optional colon (left align marker)
+    -{3,}       # Three or more dashes (the core of the divider)
+    :?          # Optional colon (right align marker)
+    \s*         # Optional trailing whitespace
+    $           # End of line
+    """,
+    re.VERBOSE,
+)
+
+_TABLE_HEADER_PATTERN = re.compile(
+    r"""
+    ^           # Start of line
+    \s*         # Optional leading whitespace
+    \#*         # Zero or more '#' (Markdown heading levels)
+    \s*         # Optional whitespace after heading
+    Table:      # Literal label
+    \s*         # Optional whitespace after colon
+    """,
+    re.VERBOSE | re.MULTILINE,
+)
+
+_NOT_NULL_PATTERN = re.compile(r"\s+not\s+null\s*")
+
+
 class PyBujiaError(Exception):
     """Base exception for all PyBujia errors."""
 
@@ -131,20 +182,8 @@ class PyBujia:
         Returns:
             str: Clean table schema ID.
         """
-        markdown_link_pattern = re.compile(
-            r"""
-            \[              # literal opening square bracket
-            ([^\]]*)        # capture group: zero or more characters that are NOT a closing square bracket
-            \]              # literal closing square bracket
-            \(              # literal opening parenthesis
-            [^\)]+          # one or more characters that are NOT a closing parenthesis
-            \)              # literal closing parenthesis
-            """,
-            re.VERBOSE,
-        )
-
         clean_id = table_schema_id.strip()
-        match = markdown_link_pattern.search(clean_id)
+        match = _MARKDOWN_LINK_PATTERN.search(clean_id)
         if match:
             clean_id = match.group(1).strip()
         return clean_id
@@ -177,18 +216,8 @@ class PyBujia:
         Returns:
             list[list[str]]: Extracted table rows, each row as list of column values.
         """
-        pattern = re.compile(
-            r"""
-            \s*         # optional whitespace
-            (?<!\\)     # not preceded by a backslash
-            \|          # pipe character
-            \s*         # optional whitespace
-             """,
-            re.VERBOSE,
-        )
-
         return [
-            [value.replace(r"\|", "|") for value in pattern.split(line.strip())[1:-1]]
+            [value.replace(r"\|", "|") for value in _PIPE_DELIMITER_PATTERN.split(line.strip())[1:-1]]
             for line in lines
             if line.startswith("|")
         ]
@@ -203,20 +232,7 @@ class PyBujia:
         Returns:
             bool: True if markdown format, False otherwise.
         """
-        pattern = re.compile(
-            r"""
-            ^           # Start of line
-            \s*         # Optional leading whitespace
-            :?          # Optional colon (left align marker)
-            -{3,}       # Three or more dashes (the core of the divider)
-            :?          # Optional colon (right align marker)
-            \s*         # Optional trailing whitespace
-            $           # End of line
-            """,
-            re.VERBOSE,
-        )
-
-        return all(pattern.match(value) for value in data[0])
+        return all(_MARKDOWN_TABLE_DIVIDER_PATTERN.match(value) for value in data[0])
 
     @classmethod
     def _extract_table(cls, lines: list[str]) -> tuple[list[dict], Optional[dict], Optional[str]]:
@@ -297,19 +313,7 @@ class PyBujia:
         Yields:
             tuple[str, list[str]]: Each yielded item is a (table_name, lines) tuple.
         """
-        pattern = re.compile(
-            r"""
-            ^           # Start of line
-            \s*         # Optional leading whitespace
-            \#*         # Zero or more '#' (Markdown heading levels)
-            \s*         # Optional whitespace after heading
-            Table:      # Literal label
-            \s*         # Optional whitespace after colon
-            """,
-            re.VERBOSE | re.MULTILINE,
-        )
-
-        table_texts = pattern.split(content.strip())[1:]  # skip anything before first Table:
+        table_texts = _TABLE_HEADER_PATTERN.split(content.strip())[1:]  # skip anything before first Table:
         for table_section in table_texts:
             lines = table_section.split("\n")
             table_name = lines.pop(0).strip()
@@ -370,7 +374,7 @@ class PyBujia:
         fields = []
         for col_name, col_type in dict_schema.items():
             col_type = col_type.lower().strip()
-            clean_col_type, num_replacements = re.subn(r"\s+not\s+null\s*", "", col_type)
+            clean_col_type, num_replacements = _NOT_NULL_PATTERN.subn("", col_type)
             nullable = num_replacements == 0
             fields.append({"name": col_name, "type": clean_col_type, "metadata": {}, "nullable": nullable})
         return StructType.fromJson({"fields": fields, "type": "struct"})
